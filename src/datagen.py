@@ -13,21 +13,24 @@ class ABTestGenerator:
         self.skew = skew
         self.traffic_per_day = traffic_per_day
 
-    def generate_single_experiment(self, num_users: int) -> tuple:
+
+    def generate_n_experiment(self, num_users: int, n_runs: int) -> dict[np.ndarray]:
         alpha_0 = self.base_ctr * self.beta / (1 - self.base_ctr)
         alpha_1 = (self.base_ctr + self.uplift) * self.beta / (1 - self.base_ctr - self.uplift)
 
-        views_0 = np.exp(stats.norm(1, self.skew).rvs(num_users)).astype(np.int64) + 1
-        views_1 = np.exp(stats.norm(1, self.skew).rvs(num_users)).astype(np.int64) + 1
+        views_0 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(np.int64) + 1
+        views_1 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(np.int64) + 1
 
+        print(views_0.shape)
         # Generate random dates within a date range
         days_needed = int(np.ceil(num_users / self.traffic_per_day))
         start_date = pd.to_datetime('2024-01-01')
         end_date = start_date + pd.Timedelta(days=days_needed)
         days = np.random.choice(pd.date_range(start=start_date, end=end_date), size=num_users, replace=True)
 
-        ctrs_0 = stats.beta.rvs(a=alpha_0, b=self.beta, size=num_users)
-        ctrs_1 = stats.beta.rvs(a=alpha_1, b=self.beta, size=num_users)
+        ctrs_0 = stats.beta.rvs(a=alpha_0, b=self.beta, size=(n_runs, num_users))
+        ctrs_1 = stats.beta.rvs(a=alpha_1, b=self.beta, size=(n_runs, num_users))
+        print(ctrs_0.shape)
 
         clicks_0 = stats.binom(n=views_0, p=ctrs_0).rvs()
         clicks_1 = stats.binom(n=views_1, p=ctrs_1).rvs()
@@ -42,30 +45,13 @@ class ABTestGenerator:
             'views_1': views_1
         }
 
-    def generate_n_experiment(self, num_users: int, n_runs: int) -> tuple:
-        experiments = {
-            'days': [],
-            'ctrs_0': [],
-            'ctrs_1': [],
-            'clicks_0': [],
-            'clicks_1': [],
-            'views_0': [],
-            'views_1': []
-        }
-
-        for _ in range(n_runs):
-            experiment = self.generate_single_experiment(num_users)
-            for key, value in experiment.items():
-                experiments[key].append(value)
-
-        return experiments
-
 
 def plot_mean_ctr_per_day(days_list, ctrs_0, ctrs_1):
 
     ctr_df = pd.DataFrame({'Date': days_list, 'CTR_0': ctrs_0, 'CTR_1': ctrs_1})
+    print(ctr_df.head())
     mean_ctr_per_day = ctr_df.groupby('Date').mean()
-
+    print(mean_ctr_per_day.head())
     plt.plot(mean_ctr_per_day.index, mean_ctr_per_day['CTR_0'], label='CTR_0')
     plt.plot(mean_ctr_per_day.index, mean_ctr_per_day['CTR_1'], label='CTR_1')
     plt.xlabel('Date')
@@ -87,14 +73,16 @@ if __name__ == '__main__':
     skew = 0.4
     traffic_per_day = 100
     num_users = 6000
-    n_runs = 1
+    n_runs = 1000
 
     ab_test_generator = ABTestGenerator(base_ctr, uplift, beta, skew, traffic_per_day)
     experiments = ab_test_generator.generate_n_experiment(num_users, n_runs)
 
     # Accessing the data from the experiments dictionary
     for i in range(n_runs):
-        days, ctrs_0, ctrs_1, clicks_0, clicks_1, views_0, views_1 = experiments['days'][i], experiments['ctrs_0'][i], experiments['ctrs_1'][i], experiments['clicks_0'][i], experiments['clicks_1'][i], experiments['views_0'][i], experiments['views_1'][i]
+        break
+        days, ctrs_0, ctrs_1, clicks_0, clicks_1, views_0, views_1 = experiments['days'], experiments['ctrs_0'][i], experiments['ctrs_1'][i], experiments['clicks_0'][i], experiments['clicks_1'][i], experiments['views_0'][i], experiments['views_1'][i]
         print(np.mean(ctrs_0), np.mean(ctrs_1), len(ctrs_0), sum(views_0), sum(views_1))
         print(np.sum(clicks_0)/np.sum(views_0), np.sum(clicks_1)/np.sum(views_1))
+        print(ctrs_0.shape)
         plot_mean_ctr_per_day(days, ctrs_0, ctrs_1)
