@@ -3,6 +3,7 @@ import scipy.stats as stats
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import streamlit as st
 
 
 class ABTestGenerator:
@@ -13,7 +14,6 @@ class ABTestGenerator:
         self.skew = skew
         self.traffic_per_day = traffic_per_day
 
-
     def generate_n_experiment(self, num_users: int, n_runs: int) -> dict[np.ndarray]:
         alpha_0 = self.base_ctr * self.beta / (1 - self.base_ctr)
         alpha_1 = (self.base_ctr + self.uplift) * self.beta / (1 - self.base_ctr - self.uplift)
@@ -21,7 +21,7 @@ class ABTestGenerator:
         views_0 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(np.int64) + 1
         views_1 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(np.int64) + 1
 
-        print(views_0.shape)
+        print('views shape: ', views_0.shape)
         # Generate random dates within a date range
         days_needed = int(np.ceil(num_users / self.traffic_per_day))
         start_date = pd.to_datetime('2024-01-01')
@@ -30,10 +30,10 @@ class ABTestGenerator:
 
         ctrs_0 = stats.beta.rvs(a=alpha_0, b=self.beta, size=(n_runs, num_users))
         ctrs_1 = stats.beta.rvs(a=alpha_1, b=self.beta, size=(n_runs, num_users))
-        print(ctrs_0.shape)
 
-        clicks_0 = stats.binom(n=views_0, p=ctrs_0).rvs()
-        clicks_1 = stats.binom(n=views_1, p=ctrs_1).rvs()
+        clicks_0 = stats.binom(n=views_0.flatten(), p=ctrs_0.flatten()).rvs().reshape(n_runs, num_users)
+        clicks_1 = stats.binom(n=views_1.flatten(), p=ctrs_1.flatten()).rvs().reshape(n_runs, num_users)
+        print(f'ctrs shape: {ctrs_0.shape} clicks shape: {clicks_0.shape} ')
 
         return {
             'days': days,

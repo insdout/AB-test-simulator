@@ -1,48 +1,41 @@
+from collections import defaultdict
 import numpy as np
-import matplotlib.pyplot as plt
+from tests import t_test, mw_test
 
 
-class EmpiricalCDF:
-    def __init__(self, data):
-        self.sorted_data, self.probabilities = self._calculate_cdf(data)
-
-    def _calculate_cdf(self, data):
-        sorted_data = np.sort(data)
-        n = len(sorted_data)
-        probabilities = np.arange(1, n + 1) / n
-        return sorted_data, probabilities
-
-    def calculate_probability(self, x):
-        idx = np.searchsorted(self.sorted_data, x, side='right')
-        if idx == 0:
-            return 0.0
-        elif idx == len(self.sorted_data):
-            return 1.0
-        else:
-            x0 = self.sorted_data[idx - 1]
-            x1 = self.sorted_data[idx]
-            p0 = self.probabilities[idx - 1]
-            p1 = self.probabilities[idx]
-            return p0 + (p1 - p0) * (x - x0) / (x1 - x0)
-
-    def plot_cdf(self):
-        plt.plot(self.sorted_data, self.probabilities, marker='.', linestyle='none')
-        plt.xlabel('Data')
-        plt.ylabel('Cumulative Probability')
-        plt.title('Empirical CDF')
-        plt.grid(True)
-        plt.show()
-
-# Example usage:
-data = np.random.normal(loc=0, scale=1, size=1000)  # Generate example data (normally distributed)
-empirical_cdf = EmpiricalCDF(data)
-
-# Calculate the probability of a specific value
-x = 0.0
-prob_x = empirical_cdf.calculate_probability(x)
-print(f"The probability of x={x} according to the empirical CDF is: {prob_x:.4f}")
-
-# Plot the empirical CDF
-empirical_cdf.plot_cdf()
+def get_ctrs_hat(results):
+    n_runs = results['clicks_0'].shape[0]
+    ctrs_0 = []
+    ctrs_1 = []
+    for i in range(n_runs):
+        ctrs_0.append(results['clicks_0'][i]/results['views_0'][i])
+        ctrs_1.append(results['clicks_1'][i]/results['views_1'][i])
+    return {
+        'ctrs_0_hat': np.array(ctrs_0),
+        'ctrs_1_hat': np.array(ctrs_1)
+        }
 
 
+def apply_tests(results, test_config={'t_test': t_test, 'mw_test': mw_test}):
+    ctrs_hat = get_ctrs_hat(results)
+    ctrs_a = ctrs_hat['ctrs_0_hat']
+    ctrs_b = ctrs_hat['ctrs_1_hat']
+    n_runs = ctrs_a.shape[0]
+    results = defaultdict(dict)
+    for test_name, test_function in test_config.items():
+        if test_function:
+            results[test_name]['p_vals'] = np.zeros(n_runs)
+            for i in range(n_runs):
+                results[test_name]['p_vals'][i] = test_function(
+                    ctrs_a[i],
+                    ctrs_b[i]
+                )
+    return results
+
+
+def empirical_cdf(p_vals):
+    p_vals_sorted = sorted(p_vals)
+    n = len(p_vals)
+    probs = [(i+1)/n for i in range(n)]
+    print(probs[-1])
+    return p_vals_sorted, probs
