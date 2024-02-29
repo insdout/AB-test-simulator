@@ -1,6 +1,6 @@
 from collections import defaultdict
 import numpy as np
-from tests import t_test, mw_test
+from src.tests import t_test, mw_test
 
 
 def get_ctrs_hat(results):
@@ -37,5 +37,4 @@ def empirical_cdf(p_vals):
     p_vals_sorted = sorted(p_vals)
     n = len(p_vals)
     probs = [(i+1)/n for i in range(n)]
-    print(probs[-1])
-    return p_vals_sorted, probs
+    return p_vals_sorted + [1], probs +[1]

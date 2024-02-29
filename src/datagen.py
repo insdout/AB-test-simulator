@@ -21,7 +21,6 @@ class ABTestGenerator:
         views_0 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(np.int64) + 1
         views_1 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(np.int64) + 1
 
-        print('views shape: ', views_0.shape)
         # Generate random dates within a date range
         days_needed = int(np.ceil(num_users / self.traffic_per_day))
         start_date = pd.to_datetime('2024-01-01')
@@ -33,7 +32,6 @@ class ABTestGenerator:
 
         clicks_0 = stats.binom(n=views_0.flatten(), p=ctrs_0.flatten()).rvs().reshape(n_runs, num_users)
         clicks_1 = stats.binom(n=views_1.flatten(), p=ctrs_1.flatten()).rvs().reshape(n_runs, num_users)
-        print(f'ctrs shape: {ctrs_0.shape} clicks shape: {clicks_0.shape} ')
 
         return {
             'days': days,
