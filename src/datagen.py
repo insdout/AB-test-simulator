@@ -3,7 +3,6 @@ import scipy.stats as stats
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import streamlit as st
 
 
 class ABTestGenerator:
@@ -15,11 +14,15 @@ class ABTestGenerator:
         self.traffic_per_day = traffic_per_day
 
     def generate_n_experiment(self, num_users: int, n_runs: int) -> dict[np.ndarray]:
+        '''
+        alpha_0 = success_rate * beta / (1 - success_rate)
+        alpha_1 = success_rate * (1 + uplift) * beta / (1 - success_rate * (1 + uplift))
+        '''
         alpha_0 = self.base_ctr * self.beta / (1 - self.base_ctr)
         alpha_1 = (self.base_ctr + self.uplift) * self.beta / (1 - self.base_ctr - self.uplift)
 
-        views_0 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(np.int64) + 1
-        views_1 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(np.int64) + 1
+        views_0 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(int) + 1
+        views_1 = np.exp(stats.norm(1, self.skew).rvs((n_runs, num_users))).astype(int) + 1
 
         # Generate random dates within a date range
         days_needed = int(np.ceil(num_users / self.traffic_per_day))
@@ -27,12 +30,15 @@ class ABTestGenerator:
         end_date = start_date + pd.Timedelta(days=days_needed)
         days = np.random.choice(pd.date_range(start=start_date, end=end_date), size=num_users, replace=True)
 
-        ctrs_0 = stats.beta.rvs(a=alpha_0, b=self.beta, size=(n_runs, num_users))
-        ctrs_1 = stats.beta.rvs(a=alpha_1, b=self.beta, size=(n_runs, num_users))
+        ctrs_0 = stats.beta.rvs(a=alpha_0, b=self.beta, size=(n_runs, num_users)).astype(np.float16)
+        ctrs_1 = stats.beta.rvs(a=alpha_1, b=self.beta, size=(n_runs, num_users)).astype(np.float16)
 
-        clicks_0 = stats.binom(n=views_0.flatten(), p=ctrs_0.flatten()).rvs().reshape(n_runs, num_users)
-        clicks_1 = stats.binom(n=views_1.flatten(), p=ctrs_1.flatten()).rvs().reshape(n_runs, num_users)
-
+        clicks_0 = stats.binom(n=views_0, p=ctrs_0).rvs()
+        clicks_1 = stats.binom(n=views_1, p=ctrs_1).rvs()
+        if clicks_0.ndim == 1:
+            clicks_0 = np.expand_dims(clicks_0, 0)
+            clicks_1 = np.expand_dims(clicks_1, 0)
+        print(views_0.shape, ctrs_0.shape, clicks_0.shape, clicks_0.ndim)
         return {
             'days': days,
             'ctrs_0': ctrs_0,
