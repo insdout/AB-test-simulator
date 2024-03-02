@@ -1,9 +1,9 @@
 import streamlit as st
 from src.testdesign import design_binomial_experiment
 from src.datagen import ABTestGenerator
-from src.plots import plot_ctr, plot_views, plot_p_hist, plot_power, plot_p_cdf, plot_p_cdf_all
+from src.plots import plot_ctr, plot_views, plot_p_hist_all, plot_power, plot_p_cdf, plot_p_cdf_all
 from src.utils import apply_tests
-from src.tests import t_test, mw_test
+from src.tests import t_test_clicks, t_test_ctr, mw_test, binom_test
 import numpy as np
 import gc
 
@@ -91,16 +91,35 @@ def main():
 
     if sb_submit_button or ed_submit:
         # A/B testing part
-        # test_config = {'t_test': t_test, 'mw_test': mw_test}
-        test_config = {'t_test': t_test}
-        st.subheader('A/B tests results.')
+        test_config={'T-test, clicks': t_test_clicks,
+                     'T-test, CTR': t_test_ctr,
+                     'Mann–Whitney, clicks': mw_test,
+                     'Binomial, CTR': binom_test}
+
+        #test_config = {'t_test': t_test}
         p_vals_aa = apply_tests(result_dict_aa, test_config=test_config)
         p_vals_ab = apply_tests(result_dict_ab, test_config=test_config)
 
-        plot_p_hist(p_vals_aa['t_test']['p_vals'])
-        plot_p_cdf_all(p_vals_aa)
-        plot_p_cdf_all(p_vals_ab)
-        plot_power(p_vals_ab, alpha=0.05)
+        st.subheader("A/B Tests Results.")
+        st.write('A/A Test:')
+        c21, c22 = st.columns([1, 1])
+        if p_vals_aa:
+            with c21:
+                st.write('p-values distribution under H0')
+
+                plot_p_hist_all(p_vals_aa, hist_alpha=1)
+            with c22:
+                st.write('p-values empirical CDF under H0')
+                plot_p_cdf_all(p_vals_aa)
+        
+        st.write('A/B Test:')
+        c31, c32 = st.columns([1, 1])
+        if p_vals_ab:
+            with c31:
+                plot_p_hist_all(p_vals_ab, hist_alpha=1)
+            with c32:
+                plot_p_cdf_all(p_vals_ab)
+            plot_power(p_vals_ab, alpha=alpha, label_fontsize=6, fontsize=6)
 
 
 if __name__ == '__main__':

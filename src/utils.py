@@ -1,6 +1,5 @@
 from collections import defaultdict
 import numpy as np
-from src.tests import t_test, mw_test
 
 
 def get_ctrs_hat(results):
@@ -16,23 +15,12 @@ def get_ctrs_hat(results):
         }
 
 
-def apply_tests(results, test_config={'t_test': t_test, 'mw_test': mw_test}):
-    # ctrs_hat = get_ctrs_hat(results)
-    #ctrs_a = ctrs_hat['ctrs_0_hat']
-    #ctrs_b = ctrs_hat['ctrs_1_hat']
-    a = results['clicks_0']
-    b = results['clicks_1']
-    n_runs = a.shape[0]
-    results = defaultdict(dict)
+def apply_tests(results, test_config):
+    test_results = defaultdict(dict)
     for test_name, test_function in test_config.items():
         if test_function:
-            results[test_name]['p_vals'] = np.zeros(n_runs)
-            for i in range(n_runs):
-                results[test_name]['p_vals'][i] = test_function(
-                    a[i],
-                    b[i]
-                )
-    return results
+            test_results[test_name]['p_vals'] = test_function(results)
+    return test_results
 
 
 def empirical_cdf(p_vals):
