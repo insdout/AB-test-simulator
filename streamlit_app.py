@@ -20,7 +20,7 @@ def main():
         page_title='AB-test Simulator',
         layout='centered',
         menu_items={
-            'Get Help': 'https://docs.streamlit.io/',
+            'Get Help': 'https://github.com/insdout/AB-test-simulator',
             'About': 'AB-test Simulator app.'
             }
     )
