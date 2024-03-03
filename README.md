@@ -2,6 +2,10 @@
 
 This Streamlit app allows you to simulate A/B tests for evaluating the performance of different versions of a web page or application. It generates synthetic data for A/B testing based on user-defined parameters and provides various statistical analyses and visualizations to interpret the results.
 
+<div align="center">
+  <img src="assets/screenshot.png" alt="AB-test simulator UI" width="600"/>
+</div>
+
 ## Features
 
 - **Data Generation Model:** Customize the parameters for generating synthetic data including base click-through rate (CTR), CTR uplift, skewness, and beta distribution parameters.
