@@ -1,9 +1,11 @@
 import streamlit as st
 from src.testdesign import design_binomial_experiment
 from src.datagen import ABTestGenerator
-from src.plots import plot_ctr, plot_views, plot_p_hist_all, plot_power, plot_p_cdf_all
+from src.plots import plot_ctr, plot_views, plot_p_hist_all
+from src.plots import plot_power, plot_p_cdf_all
 from src.utils import apply_tests
-from src.tests import t_test_clicks, t_test_ctr, mw_test, binom_test, bootstrap_test
+from src.tests import t_test_clicks, t_test_ctr, mw_test
+from src.tests import binom_test, bootstrap_test
 import numpy as np
 
 # Define global variables to store the results
@@ -30,15 +32,39 @@ def main():
     \begin{align*}
     &\text{Views} \sim \text{LogNormal}(1, \text{skew}) \\
     &\text{CTR} \sim \text{Beta}(\alpha, \beta) \\
-    &\text{Clicks} \sim \text{Binomial}(\text{Views}, \text{CTR})        
+    &\text{Clicks} \sim \text{Binomial}(\text{Views}, \text{CTR})
     \end{align*}
     ''')
 
     with st.sidebar.form(key='Data Generation Model'):
-        base_ctr_pcnt = st.slider('Base CTR, %', min_value=0.1, max_value=20.0, step=0.1, value=2.0)
-        uplift_pcnt = st.slider('CTR Uplift, %', min_value=0.1, max_value=10.0, step=0.1, value=0.4)
-        skew = st.slider('Skew', min_value=0.1, max_value=4.0, step=0.1, value=0.6)
-        ctr_beta = st.slider('Beta', min_value=1, max_value=2000, step=1, value=1000)
+        base_ctr_pcnt = st.slider(
+            'Base CTR, %',
+            min_value=0.1,
+            max_value=20.0,
+            step=0.1,
+            value=2.0
+        )
+        uplift_pcnt = st.slider(
+            'CTR Uplift, %',
+            min_value=0.1,
+            max_value=10.0,
+            step=0.1,
+            value=0.4
+        )
+        skew = st.slider(
+            'Skew', 
+            min_value=0.1,
+            max_value=4.0,
+            step=0.1,
+            value=0.6
+        )
+        ctr_beta = st.slider(
+            'Beta', 
+            min_value=1,
+            max_value=2000,
+            step=1,
+            value=1000
+        )
         sb_submit_button = st.form_submit_button(label='Apply')
 
     st.title('A/B Test Simulator')
@@ -46,11 +72,41 @@ def main():
     st.subheader('1. Experiment Design:')
     with st.form(key='Experiment Design'):
         col1, col2, col3 = st.columns(3)
-        alpha = col1.slider(r'$\alpha$,  Type I Error:', min_value=0.01, max_value=0.2, step=0.01, value=0.05)
-        n_samples = col1.slider(r'n_samples to estimate $\overline{\text{CTR}}|H_0$', min_value=100, max_value=10000, step=1, value=1000)
-        beta = col2.slider(r'$\beta$, Type II Error:', min_value=0.01, max_value=0.8, step=0.01, value=0.2)
-        n_samples = col2.slider('Select number of users for A/B test', min_value=100, max_value=10000, step=100, value=3000)
-        mde = col3.slider('Minimum Detectable Effect', min_value=0.1, max_value=10.0, step=0.1, value=0.4)
+        alpha = col1.slider(
+            r'$\alpha$,  Type I Error:',
+            min_value=0.01,
+            max_value=0.2,
+            step=0.01,
+            value=0.05
+        )
+        n_samples = col1.slider(
+            r'n_samples to estimate $\overline{\text{CTR}}|H_0$',
+            min_value=100,
+            max_value=10000,
+            step=1, 
+            value=1000
+        )
+        beta = col2.slider(
+            r'$\beta$, Type II Error:',
+            min_value=0.01,
+            max_value=0.8,
+            step=0.01,
+            value=0.2
+        )
+        n_samples = col2.slider(
+            'Select number of users for A/B test',
+            min_value=100,
+            max_value=10000,
+            step=100,
+            value=3000
+            )
+        mde = col3.slider(
+            'Minimum Detectable Effect',
+            min_value=0.1,
+            max_value=10.0,
+            step=0.1,
+            value=0.4
+        )
         ed_submit = st.form_submit_button(label='Estimate')
 
     if sb_submit_button or ed_submit:
@@ -58,18 +114,27 @@ def main():
         base_ctr = base_ctr_pcnt / 100
         mde = mde / 100
 
-        datagen_aa = ABTestGenerator(base_ctr, 0, ctr_beta, skew)  # TODO: Think about traffic per day!
+        datagen_aa = ABTestGenerator(base_ctr, 0, ctr_beta, skew)
 
-        result_dict_estimation = datagen_aa.generate_n_experiment(n_samples, 1)  # TODO: handle n_runs
+        result_dict_estimation = datagen_aa.generate_n_experiment(n_samples, 1)
         clicks_0 = result_dict_estimation['clicks_0'][0]
         views_0 = result_dict_estimation['views_0'][0]
         estimated_ctr_h0 = np.sum(clicks_0) / np.sum(views_0)
 
-        st.text(f'Sample Size Calculations. \nBase CTR: {base_ctr} \nMinimum Detectable Effect: {mde} \nalpha: {alpha} \nbeta: {beta}')
+        st.text(f'Sample Size Calculations. \n'
+                f'Base CTR: {base_ctr} \n'
+                f'Minimum Detectable Effect: {mde} \n'
+                f'alpha: {alpha} \nbeta: {beta}')
 
-        min_samples_required = design_binomial_experiment(min_detectable_change=mde, p_0=estimated_ctr_h0,
-                                                           alpha=alpha, beta=beta)
-        st.text(f'Estimated CTR: {np.round(estimated_ctr_h0, 8)} \nMinimal number of interactions required: {min_samples_required}')
+        min_samples_required = design_binomial_experiment(
+            min_detectable_change=mde,
+            p_0=estimated_ctr_h0,
+            alpha=alpha,
+            beta=beta
+        )
+        st.text(f'Estimated CTR: {np.round(estimated_ctr_h0, 8)} \n'
+                f'Minimal number of interactions '
+                f'required: {min_samples_required}')
 
         datagen_ab = ABTestGenerator(base_ctr, uplift, ctr_beta, skew)
         result_dict_aa = datagen_aa.generate_n_experiment(n_samples, 1000)
@@ -91,11 +156,13 @@ def main():
 
     if sb_submit_button or ed_submit:
         # A/B testing part
-        test_config={'T-test, clicks': t_test_clicks,
-                     'T-test, CTR': t_test_ctr,
-                     'Mann–Whitney, clicks': mw_test,
-                     'Binomial, CTR': binom_test,
-                     'Bootstrap, CTR': bootstrap_test}
+        test_config = {
+            'T-test, clicks': t_test_clicks,
+            'T-test, CTR': t_test_ctr,
+            'Mann–Whitney, clicks': mw_test,
+            'Binomial, CTR': binom_test,
+            'Bootstrap, CTR': bootstrap_test
+        }
 
         p_vals_aa = apply_tests(result_dict_aa, test_config=test_config)
         p_vals_ab = apply_tests(result_dict_ab, test_config=test_config)
