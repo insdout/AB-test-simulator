@@ -52,14 +52,14 @@ def main():
             value=0.4
         )
         skew = st.slider(
-            'Skew', 
+            'Skew',
             min_value=0.1,
             max_value=4.0,
             step=0.1,
             value=0.6
         )
         ctr_beta = st.slider(
-            'Beta', 
+            'Beta',
             min_value=1,
             max_value=2000,
             step=1,
@@ -83,7 +83,7 @@ def main():
             r'n_samples to estimate $\overline{\text{CTR}}|H_0$',
             min_value=100,
             max_value=10000,
-            step=1, 
+            step=1,
             value=1000
         )
         beta = col2.slider(
