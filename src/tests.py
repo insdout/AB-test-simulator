@@ -101,7 +101,7 @@ def binom_test(results: dict[str, np.ndarray]) -> np.ndarray:
 
 
 def bootstrap_test(results: dict[str, np.ndarray],
-                   n_bootstrap: int = 2000) -> np.ndarray:
+                   n_bootstrap: int = 1000) -> np.ndarray:
     """
     Perform bootstrap test for A/B test results.
 

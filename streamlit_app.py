@@ -98,7 +98,7 @@ def main():
             min_value=100,
             max_value=10000,
             step=100,
-            value=3000
+            value=1000
             )
         mde = col3.slider(
             'Minimum Detectable Effect',
@@ -127,7 +127,7 @@ def main():
                 f'alpha: {alpha} \nbeta: {beta}')
 
         min_samples_required = design_binomial_experiment(
-            min_detectable_change=mde,
+            mde=mde,
             p_0=estimated_ctr_h0,
             alpha=alpha,
             beta=beta
@@ -137,8 +137,8 @@ def main():
                 f'required: {min_samples_required}')
 
         datagen_ab = ABTestGenerator(base_ctr, uplift, ctr_beta, skew)
-        result_dict_aa = datagen_aa.generate_n_experiment(n_samples, 1000)
-        result_dict_ab = datagen_ab.generate_n_experiment(n_samples, 1000)
+        result_dict_aa = datagen_aa.generate_n_experiment(n_samples, 500)
+        result_dict_ab = datagen_ab.generate_n_experiment(n_samples, 500)
 
     if result_dict_aa:
         st.subheader("2. Ground Truth Distributions under H0 and H1:")
